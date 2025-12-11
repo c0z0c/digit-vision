@@ -1,0 +1,11 @@
+streamlit
+streamlit-drawable-canvas
+onnxruntime
+numpy
+opencv-python
+matplotlib
+Pillow
+requests
+helper-dev-utils
+helper-plot-hangul
+scipy
