@@ -6,7 +6,12 @@ ONNX 형식의 MNIST 모델을 활용하여 사용자가 웹 캔버스에 그린
 
 본 프로젝트는 다음 기술을 활용하여 손글씨 숫자 인식 서비스를 제공합니다:
 
-[시연영상](https://youtu.be/1b-1bM4VefI)
+<video width="320px" controls>
+  <source src="doc/AI숫자예측_251211_132033.mp4" type="video/mp4">
+  <img src="doc/preview01.png" width="320px" alt="대체 이미지">
+</video>
+
+<a href="https://youtu.be/1b-1bM4VefI" target="_blank" rel="noopener noreferrer">시연영상</a>
 
 - **Streamlit**: 웹 인터페이스 및 대화형 UI
 - **ONNX Runtime**: 경량화된 추론 엔진
