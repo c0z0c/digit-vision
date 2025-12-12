@@ -6,31 +6,42 @@ import hashlib
 import logging
 import numpy as np
 import streamlit as st
+from pathlib import Path
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+from typing import Optional
 import matplotlib.pyplot as plt
+import onnxruntime as ort
+
 from helper_dev_utils import get_auto_logger
 
-logger = get_auto_logger()
+logger = get_auto_logger(log_level=logging.DEBUG)
 
 # Import src modules
 from src.model import MNISTPipeline, PredictionResult
 from src.history import HistoryManager, HistoryRecord, FileHistoryManager
 from src.visualization import VisualizationManager
-from src.utils.utils_st import hidden_page_top_margin, minimal_divider
+from src.model import ModelConfig, ModelDownloader
+from src.utils.utils_st import (
+    minimal_divider,
+    hidden_page_top_margin,
+)
 
 
 @st.cache_resource
-def load_mnist_pipeline() -> MNISTPipeline:
+def load_mnist_pipeline(_config) -> MNISTPipeline:
     """MNIST 파이프라인을 로드하고 캐싱합니다.
 
     @st.cache_resource 데코레이터를 사용하여 모델을 한 번만 로드하고
-    세션 간에 재사용합니다.
+    세션 간에 재사용합니다. 언더스코어 접두사는 Streamlit이 파라미터를 해싱하지 않도록 합니다.
+
+    Args:
+        _config: ModelConfig 객체 (언더스코어 접두사로 해싱 방지)
 
     Returns:
         초기화된 MNISTPipeline 객체
     """
-    pipeline = MNISTPipeline()
+    pipeline = MNISTPipeline(config=_config)
     pipeline.initialize()
     return pipeline
 
@@ -59,6 +70,177 @@ def initialize_session_state() -> None:
         )
     if "canvas_key" not in st.session_state:
         st.session_state.canvas_key = 0
+    if "model_config" not in st.session_state:
+        from src.model import ModelConfig
+
+        st.session_state.model_config = ModelConfig()
+
+
+def extract_model_name(url: str) -> str:
+    """URL에서 파일명 추출"""
+    from urllib.parse import urlparse
+    import os
+
+    parsed = urlparse(url)
+    filename = os.path.basename(parsed.path)
+    if not filename or not filename.endswith(".onnx"):
+        return "model.onnx"
+    return filename
+
+
+def validate_model_url(url: str) -> Optional[str]:
+    """모델 URL 형식 검증. 에러 메시지 또는 None 반환"""
+    if not url:
+        return "URL을 입력해주세요"
+    if not url.startswith(("http://", "https://")):
+        return "URL은 http:// 또는 https://로 시작해야 합니다"
+    if not url.endswith(".onnx"):
+        return "URL은 .onnx 파일을 가리켜야 합니다"
+    return None
+
+
+def validate_mnist_model(model_path, config) -> Optional[str]:
+    """ONNX 모델 MNIST 호환성 검증. 에러 또는 None 반환"""
+    try:
+
+        session = ort.InferenceSession(
+            str(model_path), providers=["CPUExecutionProvider"]
+        )
+
+        # 입력 shape 확인
+        input_shape = session.get_inputs()[0].shape
+        expected_shape = list(config.input_shape)
+
+        # 동적 배치 차원 허용
+        if input_shape[0] in [None, "N", "batch"]:
+            input_shape = [1] + list(input_shape[1:])
+
+        # 공간 차원 (28x28) 및 채널 (1) 확인
+        if list(input_shape[1:]) != expected_shape[1:]:
+            return f"입력 shape 불일치: 예상 {expected_shape}, 실제 {input_shape}"
+
+        # 출력 클래스 수 확인
+        output_shape = session.get_outputs()[0].shape
+        if output_shape[-1] != config.num_classes:
+            return f"출력 클래스 수 불일치: 예상 {config.num_classes}, 실제 {output_shape[-1]}"
+
+        return None
+
+    except Exception as e:
+        return f"모델 로드 실패: {str(e)}"
+
+
+def display_model_settings() -> None:
+    """사이드바에 모델 URL 설정 UI 표시"""
+
+    with st.expander("⚙️ 모델 설정", expanded=False):
+
+        st.markdown("##### ONNX 모델 구성")
+
+        # 현재 모델 정보
+        current_config = st.session_state.model_config
+        st.info(f"현재 모델: {current_config.model_name}")
+
+        extracted_name = current_config.model_name
+
+        cols = st.columns([8, 2])
+        with cols[0]:
+            # URL 입력
+            model_url = st.text_input(
+                "모델 URL",
+                value=current_config.model_url,
+                help="ONNX 모델 URL을 입력하세요 (.onnx로 끝나야 함)",
+                key="model_url_input",
+            )
+            if model_url != current_config.model_url:
+                extracted_name = extract_model_name(model_url)
+            else:
+                extracted_name = current_config.model_name
+
+        with cols[1]:
+            # 모델명 자동 추출
+            model_name = st.text_input(
+                "모델 파일명",
+                value=extracted_name,
+                help="캐시될 모델 파일명",
+                key="model_name_input",
+            )
+
+        cols = st.columns([1, 1])
+        with cols[0]:
+            # 적용 버튼
+            if st.button(
+                "적용 및 다운로드", key="apply_model_btn", use_container_width=True
+            ):
+                logger.debug(f"모델 설정 적용: URL={model_url}, 이름={model_name}")
+
+                # URL 검증
+                error = validate_model_url(model_url)
+                if error:
+                    st.error(error)
+                    return
+
+                # 모델명 검증
+                if not model_name.endswith(".onnx"):
+                    st.error("모델 파일명은 .onnx로 끝나야 합니다")
+                    return
+
+                # 새 설정 생성
+                new_config = ModelConfig(
+                    model_url=model_url,
+                    model_name=model_name,
+                    cache_dir="./models",
+                    input_shape=(1, 1, 28, 28),
+                    num_classes=10,
+                )
+
+                # 다운로드 및 검증
+                try:
+                    with st.spinner("모델 다운로드 중..."):
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
+
+                        def update_progress(progress: float, status: str = ""):
+                            progress_bar.progress(progress)
+                            if status:
+                                status_text.text(status)
+
+                        # 모델 다운로드
+                        downloader = ModelDownloader(new_config)
+                        model_path = downloader.download(
+                            force=True, progress_callback=update_progress
+                        )
+
+                        # 모델 호환성 검증
+                        validation_error = validate_mnist_model(model_path, new_config)
+                        if validation_error:
+                            st.error(f"모델 검증 실패: {validation_error}")
+                            # 잘못된 모델 삭제
+                            model_path.unlink(missing_ok=True)
+                            return
+
+                        # 세션 상태 업데이트
+                        st.session_state.model_config = new_config
+
+                        # 캐시 초기화 (새 모델 로드)
+                        st.cache_resource.clear()
+
+                        st.success("✅ 모델 다운로드 및 검증 완료!")
+                        st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ 다운로드 실패: {str(e)}")
+                    logger.exception("모델 다운로드 오류")
+
+        with cols[1]:
+            # 초기화 버튼
+            if st.button(
+                "기본값으로 초기화", key="reset_model_btn", use_container_width=True
+            ):
+                st.session_state.model_config = ModelConfig()
+                st.cache_resource.clear()
+                st.success("기본 모델로 초기화되었습니다")
+                st.rerun()
 
 
 def display_history() -> None:
@@ -143,13 +325,17 @@ def main():
     # 세션 상태 초기화
     initialize_session_state()
 
-    # 모델 및 시각화 매니저 로드
-    pipeline = load_mnist_pipeline()
+    # 모델 및 시각화 매니저 로드 (세션 상태의 config 사용)
+    pipeline = load_mnist_pipeline(st.session_state.model_config)
     viz_manager = load_visualization_manager()
     history_manager = st.session_state.history_manager
 
+    # 모델 설정 UI 추가
+    display_model_settings()
+
     # 제목
     st.markdown("##### 🔢 AI 숫자 예측")
+    st.caption(f"현재 적용 모델: {st.session_state.model_config.model_name}")
 
     minimal_divider()
 
