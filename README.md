@@ -60,7 +60,7 @@ ONNX 형식의 MNIST 모델을 활용하여 사용자가 웹 캔버스에 그린
 ```bash
 # 저장소 클론
 git clone <repository-url>
-cd mission17
+cd digit-vision
 
 # 의존성 설치
 pip install -r requirements.txt
@@ -93,7 +93,7 @@ docker run -p 8501:8501 digit-vision
 ## 프로젝트 구조
 
 ```
-mission17/
+digit-vision/
 ├── app.py                      # Streamlit 메인 애플리케이션
 ├── requirements.txt            # Python 의존성
 ├── Dockerfile                  # Docker 컨테이너 설정
@@ -109,7 +109,8 @@ mission17/
 │   │   ├── ModelDownloader.py     # 모델 다운로드
 │   │   └── DataClass.py           # 데이터 클래스
 │   ├── history/
-│   │   ├── HistoryManager.py      # 히스토리 관리
+│   │   ├── FileHistoryManager.py  # 파일 기반 히스토리 관리
+│   │   ├── HistoryManager.py      # 히스토리 관리 인터페이스
 │   │   └── HistoryRecord.py       # 히스토리 레코드
 │   ├── visualization/
 │   │   ├── VisualizationManager.py    # 시각화 통합
@@ -179,7 +180,7 @@ mission17/
 
 ## 환경 요구사항
 
-- Python 3.10 이상
+- Python 3.11 이상
 - Docker (선택 사항)
 - 8501 포트 사용 가능
 
