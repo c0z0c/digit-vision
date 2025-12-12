@@ -1,26 +1,40 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API - ONNX 추론기
 
-이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
+이 모듈은 ONNX Runtime을 사용하여 모델 추론을 수행하는 ONNXPredictor 클래스를 제공합니다.
+
+주요 기능:
+    - ONNX 모델 로드 및 세션 관리
+    - 전처리된 이미지로 추론 수행
+    - Softmax 적용 및 확률 계산
+    - 예측 레이블 및 신뢰도 추출
+
+추론 과정:
+    1. ONNX Runtime 세션 생성
+    2. 입력 데이터 전달 (1, 1, 28, 28)
+    3. 로짓 출력 획득
+    4. Softmax로 확률 변환
+    5. 최대 확률 클래스 선택
 """
 
+import logging
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import logging
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from helper_dev_utils import get_auto_logger
+
 from src.model.DataClass import PredictionResult
 
 logger = get_auto_logger(log_level=logging.DEBUG)
@@ -90,11 +104,13 @@ class ONNXPredictor:
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         """Softmax 함수를 적용합니다.
 
+        로짓을 확률 분포로 변환합니다. 수치 안정성을 위해 최댓값을 뺍니다.
+
         Args:
-            x: 입력 배열 (로짓)
+            x: 입력 배열 (로짓, 모델 출력값)
 
         Returns:
-            확률 분포 (합이 1)
+            확률 분포 (합이 1인 numpy 배열)
         """
         # 수치 안정성을 위해 최댓값을 뺌
         exp_x = np.exp(x - np.max(x))

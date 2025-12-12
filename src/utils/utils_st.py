@@ -1,12 +1,34 @@
-import streamlit as st
+# -*- coding: utf-8 -*-
+"""Streamlit 유틸리티 함수 모음
+
+이 모듈은 Streamlit 앱의 UI 스타일을 커스터마이징하는 유틸리티 함수들을 제공합니다.
+
+주요 기능:
+    - 페이지 상단 여백 제거
+    - 컴팩트한 구분선 생성
+    - 사이드바 토글 유지
+"""
+
 import logging
+
+import streamlit as st
 from helper_dev_utils import get_auto_logger
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 
 
 def hidden_page_top_margin() -> None:
-    """상단 여백을 제거하면서 사이드바 토글 버튼은 유지합니다."""
+    """상단 여백을 제거하면서 사이드바 토글 버튼은 유지합니다.
+
+    Streamlit의 기본 헤더/툴바를 숨기고 페이지 상단 여백을 제거하여
+    더 많은 화면 공간을 확보합니다. 단, 사이드바 토글 버튼은 유지합니다.
+
+    적용되는 스타일:
+        - Streamlit 헤더/툴바 숨김
+        - 메인 컨테이너 상단 여백 제거
+        - 텍스트 요소 여백 최소화
+        - 사이드바 토글 버튼 유지
+    """
     hide_deploy = []
 
     # 스타일 태그 시작
@@ -53,7 +75,11 @@ def hidden_page_top_margin() -> None:
 def minimal_divider() -> None:
     """여백 최소화 가로선을 렌더링합니다.
 
-    기본 st.markdown("---")의 과도한 여백을 제거합니다.
+    기본 st.markdown("---")의 과도한 여백을 제거하고
+    얇은 회색 구분선만 표시합니다.
+
+    사용 예:
+        minimal_divider()  # 1px 회색 구분선 표시
     """
     st.markdown(
         '<div style="height: 1px; background-color: #ddd; margin: 0; padding: 0;"></div>',

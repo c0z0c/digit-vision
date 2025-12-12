@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 결과 시각화 API - 클래스 기반 설계
+"""MNIST 예측 결과 시각화 API
 
 이 모듈은 MNIST 예측 결과를 시각화하는 다양한 방법을 제공합니다.
 """
 
-from typing import Optional, Tuple
 import logging
+import os
+import sys
+from pathlib import Path
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from pathlib import Path
-import sys
+from helper_dev_utils import get_auto_logger
+from helper_plot_hangul import matplotlib_font_reset
 from matplotlib.figure import Figure
 
-logger = get_auto_logger(log_level=logging.DEBUG)
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from helper_plot_hangul import matplotlib_font_reset
-from helper_dev_utils import get_auto_logger
 from src.visualization.ImageVisualizer import ImageVisualizer
 from src.visualization.PredictionVisualizer import PredictionVisualizer
 from src.visualization.VisualizationManager import VisualizationManager

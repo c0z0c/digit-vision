@@ -1,25 +1,29 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 히스토리 저장소 API - 클래스 기반 설계
+"""MNIST 예측 히스토리 저장소 API - 레코드 데이터 클래스
 
-이 모듈은 예측 기록을 저장, 조회, 관리하는 기능을 제공합니다.
+이 모듈은 단일 예측 기록을 표현하는 HistoryRecord 데이터 클래스를 정의합니다.
+
+주요 기능:
+    - 예측 결과 및 이미지 정보 저장
+    - 딕셔너리 변환 (JSON 직렬화용)
+    - 이미지 해시 계산 (중복 방지)
 """
 
 import datetime
 import hashlib
 import json
 import logging
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
+
 import numpy as np
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-from helper_dev_utils import get_auto_logger
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 
@@ -95,11 +99,15 @@ class HistoryRecord:
     ) -> str:
         """전처리된 이미지의 SHA256 해시를 계산합니다.
 
+        동일한 이미지가 여러 번 예측되는 것을 방지하기 위해
+        이미지의 바이트 데이터와 전처리 방식을 조합하여 해시를 생성합니다.
+
         Args:
             preprocessed_image: 전처리된 28x28 이미지 (numpy 배열)
+            use_bbox_resize: 바운딩 박스 리사이즈 사용 여부
 
         Returns:
-            SHA256 해시 문자열 (16진수)
+            SHA256 해시 문자열 (16진수, 64자)
         """
         image_bytes = preprocessed_image.tobytes()
         # 전처리 방식을 해시에 포함

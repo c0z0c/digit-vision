@@ -1,21 +1,40 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 결과 시각화 API - 클래스 기반 설계
+"""MNIST 예측 결과 시각화 API - 통합 시각화 매니저
 
-이 모듈은 MNIST 예측 결과를 시각화하는 다양한 방법을 제공합니다.
+이 모듈은 모든 시각화 기능을 통합 관리하는 VisualizationManager 클래스를 제공합니다.
+
+주요 기능:
+    - ImageVisualizer와 PredictionVisualizer 통합 관리
+    - 예측 결과 대시보드 생성
+    - 단일 인터페이스로 모든 시각화 접근
+
+구조:
+    VisualizationManager
+    ├── prediction_viz: PredictionVisualizer
+    └── image_viz: ImageVisualizer
+
+사용 예:
+    manager = VisualizationManager()
+    fig = manager.prediction_viz.plot_bar_chart(probs, label)
+    dashboard = manager.create_prediction_dashboard(probs, label, confidence)
 """
 
-from typing import Optional, Tuple
 import logging
+import sys
+from pathlib import Path
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.figure import Figure
-from helper_plot_hangul import matplotlib_font_reset
 from helper_dev_utils import get_auto_logger
+from helper_plot_hangul import matplotlib_font_reset
+from matplotlib.figure import Figure
 
-logger = get_auto_logger(log_level=logging.DEBUG)
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
 
-from src.visualization.PredictionVisualizer import PredictionVisualizer
 from src.visualization.ImageVisualizer import ImageVisualizer
+from src.visualization.PredictionVisualizer import PredictionVisualizer
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 
@@ -42,12 +61,14 @@ class VisualizationManager:
     ) -> Figure:
         """예측 결과를 종합적으로 보여주는 대시보드를 생성합니다.
 
+        전처리 이미지, 예측 레이블, 신뢰도, 확률 분포를 한 화면에 표시합니다.
+
         Args:
-            probabilities: 각 클래스별 확률
-            predicted_label: 예측된 레이블
-            confidence: 신뢰도
-            preprocessed_image: 전처리된 이미지 (선택적)
-            figsize: Figure 크기
+            probabilities: 각 클래스별 확률 배열 (10개)
+            predicted_label: 예측된 레이블 (0-9)
+            confidence: 신뢰도 (0.0 ~ 1.0)
+            preprocessed_image: 전처리된 28x28 이미지 (선택적)
+            figsize: Figure 크기 (width, height)
 
         Returns:
             matplotlib Figure 객체

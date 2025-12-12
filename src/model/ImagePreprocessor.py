@@ -1,27 +1,38 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API - 이미지 전처리
 
-이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
+이 모듈은 캔버스 이미지를 ONNX 모델 입력 형식으로 변환하는 ImagePreprocessor 클래스를 제공합니다.
+
+주요 기능:
+    - 그레이스케일 변환 및 색상 반전
+    - 바운딩 박스 기반 리사이즈 (비율 유지)
+    - 직접 리사이즈 (전체 캔버스)
+    - 정규화 및 shape 변환 (1, 1, 28, 28)
+
+전처리 과정:
+    1. RGBA/RGB → 그레이스케일
+    2. 색상 반전 (검은 선 → 흰 숫자)
+    3. 바운딩 박스 추출 및 리사이즈
+    4. 28x28 캔버스 중앙 배치
+    5. 정규화 (0~255 → 0.0~1.0)
 """
 
+import logging
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import logging
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
-import logging
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-from helper_dev_utils import get_auto_logger
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 
@@ -257,6 +268,8 @@ class ImagePreprocessor:
     def _resize(self, image: np.ndarray, target_size: Tuple[int, int]) -> np.ndarray:
         """이미지 크기를 조정합니다.
 
+        INTER_AREA 보간법을 사용하여 축소 시 품질을 유지합니다.
+
         Args:
             image: 입력 이미지
             target_size: 목표 크기 (height, width)
@@ -270,6 +283,9 @@ class ImagePreprocessor:
     def _invert(self, image: np.ndarray) -> np.ndarray:
         """이미지 색상을 반전합니다.
 
+        캔버스의 검은 선을 흰색으로 변환하여 MNIST 모델 입력 형식에 맞춥니다.
+        (MNIST는 검은 배경에 흰 숫자를 학습했습니다)
+
         Args:
             image: 그레이스케일 이미지
 
@@ -282,11 +298,13 @@ class ImagePreprocessor:
     def _normalize(self, image: np.ndarray) -> np.ndarray:
         """픽셀 값을 0.0~1.0으로 정규화합니다.
 
+        ONNX 모델의 입력 형식에 맞게 uint8 범위를 float32로 변환합니다.
+
         Args:
             image: 입력 이미지 (0~255)
 
         Returns:
-            정규화된 이미지 (0.0~1.0)
+            정규화된 이미지 (0.0~1.0, float32)
         """
         normalized = image.astype(np.float32) / 255.0
         return normalized

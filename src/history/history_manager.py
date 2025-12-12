@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 히스토리 저장소 API - 클래스 기반 설계
+"""MNIST 예측 히스토리 저장소 API
 
 이 모듈은 예측 기록을 저장, 조회, 관리하는 기능을 제공합니다.
 """
@@ -7,23 +7,21 @@
 import datetime
 import json
 import logging
+import os
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
-import os
-from pathlib import Path
-import sys
-import numpy as np
-from PIL import Image
-from helper_dev_utils import get_auto_logger
 
-logger = get_auto_logger(log_level=logging.DEBUG)
+import numpy as np
+from helper_dev_utils import get_auto_logger
+from PIL import Image
+
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-from src.history.HistoryRecord import HistoryRecord
-from src.history.HistoryManager import HistoryManager
 from src.history.FileHistoryManager import FileHistoryManager
+from src.history.HistoryManager import HistoryManager
+from src.history.HistoryRecord import HistoryRecord
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 # ============================================================================

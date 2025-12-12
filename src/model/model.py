@@ -1,34 +1,32 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API
 
 이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
 """
 
+import logging
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import logging
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
-import sys
-from PIL import Image
 from helper_dev_utils import get_auto_logger
-
-logger = get_auto_logger(log_level=logging.DEBUG)
+from PIL import Image
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from src.model.DataClass import PredictionResult
-from src.model.DataClass import ModelConfig
+from src.model.DataClass import ModelConfig, PredictionResult
 from src.model.DummyDataGenerator import DummyDataGenerator
 from src.model.ImagePreprocessor import ImagePreprocessor
+from src.model.MNISTPipeline import MNISTPipeline
 from src.model.ModelDownloader import ModelDownloader
 from src.model.ONNXPredictor import ONNXPredictor
-from src.model.MNISTPipeline import MNISTPipeline
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 

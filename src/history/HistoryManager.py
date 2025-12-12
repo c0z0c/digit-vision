@@ -1,24 +1,34 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 히스토리 저장소 API - 클래스 기반 설계
+"""MNIST 예측 히스토리 저장소 API - 메모리 기반 매니저
 
-이 모듈은 예측 기록을 저장, 조회, 관리하는 기능을 제공합니다.
+이 모듈은 예측 기록을 메모리에 저장하고 관리하는 HistoryManager 클래스를 제공합니다.
+
+주요 기능:
+    - 예측 기록 추가 및 조회
+    - 레이블/신뢰도 범위별 필터링
+    - 통계 정보 계산
+    - 최대 레코드 수 제한 (FIFO)
+
+참고:
+    파일 시스템에 영구 저장이 필요한 경우 FileHistoryManager를 사용하세요.
 """
 
 import datetime
 import json
 import logging
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
+
 import numpy as np
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from helper_dev_utils import get_auto_logger
+
 from src.history.HistoryRecord import HistoryRecord
 
 logger = get_auto_logger(log_level=logging.DEBUG)

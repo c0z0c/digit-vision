@@ -1,27 +1,40 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API - 모델 다운로더
 
-이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
+이 모듈은 ONNX 모델을 다운로드하고 검증하는 ModelDownloader 클래스를 제공합니다.
+
+주요 기능:
+    - URL에서 ONNX 모델 다운로드
+    - 파일 무결성 검증 (크기, 매직 넘버)
+    - 캐싱 (중복 다운로드 방지)
+    - 재시도 로직 (지수 백오프)
+    - 진행률 콜백 지원
+
+검증 항목:
+    - 파일 크기 (최소 1KB)
+    - ONNX 매직 넘버 (0x08로 시작)
+    - ONNX Runtime 로드 테스트
 """
 
+import logging
 import os
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Callable
-import logging
+from typing import Callable, Dict, List, Optional, Tuple
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]  # mission17/
 sys.path.insert(0, str(project_root))
 
 from helper_dev_utils import get_auto_logger
+
 from src.model.DataClass import ModelConfig
 
 logger = get_auto_logger(log_level=logging.DEBUG)
@@ -53,6 +66,9 @@ class ModelDownloader:
 
     def _validate_onnx_file(self, file_path: Path) -> bool:
         """ONNX 파일 무결성 검증
+
+        다운로드된 파일이 유효한 ONNX 모델인지 검증합니다.
+        파일 크기, 매직 넘버, ONNX Runtime 로드를 확인합니다.
 
         Args:
             file_path: 검증할 파일 경로
@@ -210,6 +226,8 @@ class ModelDownloader:
 
     def get_model_path(self) -> Optional[Path]:
         """캐시된 모델 파일 경로를 반환합니다.
+
+        다운로드 없이 현재 캐시된 모델의 경로를 확인합니다.
 
         Returns:
             모델 파일 경로 (존재하지 않으면 None)

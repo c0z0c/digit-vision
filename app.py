@@ -1,31 +1,51 @@
 # -*- coding: utf-8 -*-
-"""Streamlit ONNX MNIST 숫자 예측 서비스 - 실제 ONNX 모델 통합"""
+"""Streamlit ONNX MNIST 숫자 예측 서비스 - 실제 ONNX 모델 통합
+
+이 모듈은 Streamlit을 사용하여 손으로 그린 숫자를 AI가 예측하는 웹 애플리케이션입니다.
+
+주요 기능:
+    - 캔버스에 0-9 숫자 그리기
+    - ONNX 모델을 사용한 실시간 숫자 예측
+    - 예측 결과 시각화 (확률 분포 차트)
+    - 예측 기록 저장 및 관리
+    - 모델 URL 동적 변경 및 다운로드
+    - 이미지 해시 기반 중복 예측 방지
+
+기술 스택:
+    - Streamlit: 웹 UI 프레임워크
+    - ONNX Runtime: AI 모델 추론
+    - OpenCV/PIL: 이미지 전처리
+    - Matplotlib: 결과 시각화
+"""
 
 import datetime
 import hashlib
 import logging
-import numpy as np
-import streamlit as st
+import os
 from pathlib import Path
+from typing import Optional
+from urllib.parse import urlparse
+
+import matplotlib.pyplot as plt
+import numpy as np
+import onnxruntime as ort
+import streamlit as st
+from helper_dev_utils import get_auto_logger
+from helper_plot_hangul import matplotlib_font_reset
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-from typing import Optional
-import matplotlib.pyplot as plt
-import onnxruntime as ort
 
-from helper_dev_utils import get_auto_logger
-
-logger = get_auto_logger(log_level=logging.DEBUG)
+from src.history import FileHistoryManager, HistoryManager, HistoryRecord
 
 # Import src modules
-from src.model import MNISTPipeline, PredictionResult
-from src.history import HistoryManager, HistoryRecord, FileHistoryManager
-from src.visualization import VisualizationManager
-from src.model import ModelConfig, ModelDownloader
+from src.model import MNISTPipeline, ModelConfig, ModelDownloader, PredictionResult
 from src.utils.utils_st import (
-    minimal_divider,
     hidden_page_top_margin,
+    minimal_divider,
 )
+from src.visualization import VisualizationManager
+
+logger = get_auto_logger(log_level=logging.DEBUG)
 
 
 @st.cache_resource
@@ -57,12 +77,22 @@ def load_visualization_manager() -> VisualizationManager:
 
 
 def setup_matplotlib_font() -> None:
-    """matplotlib 한글 폰트 설정"""
-    from helper_plot_hangul import matplotlib_font_reset
+    """matplotlib 한글 폰트 설정
+
+    한글이 깨지지 않도록 matplotlib의 폰트를 설정합니다.
+    현재는 helper_plot_hangul 모듈에서 자동으로 처리되므로 별도 설정이 불필요합니다.
+    """
+    pass
 
 
 def initialize_session_state() -> None:
-    """세션 상태 변수 초기화"""
+    """세션 상태 변수 초기화
+
+    Streamlit 세션 상태에 필요한 변수들을 초기화합니다.
+    - history_manager: 예측 기록을 파일 시스템에 저장하는 매니저
+    - canvas_key: 캔버스 위젯의 고유 키 (캔버스 초기화용)
+    - model_config: ONNX 모델 설정 정보
+    """
     if "history_manager" not in st.session_state:
         # st.session_state.history_manager = HistoryManager(max_records=100)
         st.session_state.history_manager = FileHistoryManager(
@@ -71,15 +101,18 @@ def initialize_session_state() -> None:
     if "canvas_key" not in st.session_state:
         st.session_state.canvas_key = 0
     if "model_config" not in st.session_state:
-        from src.model import ModelConfig
-
         st.session_state.model_config = ModelConfig()
 
 
 def extract_model_name(url: str) -> str:
-    """URL에서 파일명 추출"""
-    from urllib.parse import urlparse
-    import os
+    """URL에서 파일명 추출
+
+    Args:
+        url: ONNX 모델 다운로드 URL
+
+    Returns:
+        추출된 파일명 (기본값: model.onnx)
+    """
 
     parsed = urlparse(url)
     filename = os.path.basename(parsed.path)
@@ -89,7 +122,14 @@ def extract_model_name(url: str) -> str:
 
 
 def validate_model_url(url: str) -> Optional[str]:
-    """모델 URL 형식 검증. 에러 메시지 또는 None 반환"""
+    """모델 URL 형식 검증
+
+    Args:
+        url: 검증할 URL
+
+    Returns:
+        에러 메시지 (문제가 있을 경우) 또는 None (정상인 경우)
+    """
     if not url:
         return "URL을 입력해주세요"
     if not url.startswith(("http://", "https://")):
@@ -100,7 +140,18 @@ def validate_model_url(url: str) -> Optional[str]:
 
 
 def validate_mnist_model(model_path, config) -> Optional[str]:
-    """ONNX 모델 MNIST 호환성 검증. 에러 또는 None 반환"""
+    """ONNX 모델 MNIST 호환성 검증
+
+    다운로드된 ONNX 모델이 MNIST 숫자 예측에 사용 가능한지 검증합니다.
+    입력 shape(1, 1, 28, 28)과 출력 클래스 수(10)를 확인합니다.
+
+    Args:
+        model_path: ONNX 모델 파일 경로
+        config: 모델 설정 객체 (입력 shape 및 클래스 수 정보)
+
+    Returns:
+        에러 메시지 (호환되지 않을 경우) 또는 None (호환될 경우)
+    """
     try:
 
         session = ort.InferenceSession(
@@ -131,7 +182,13 @@ def validate_mnist_model(model_path, config) -> Optional[str]:
 
 
 def display_model_settings() -> None:
-    """사이드바에 모델 URL 설정 UI 표시"""
+    """사이드바에 모델 URL 설정 UI 표시
+
+    사용자가 ONNX 모델 URL을 입력하고 모델을 다운로드할 수 있는 UI를 제공합니다.
+    - URL 입력 및 파일명 자동 추출
+    - 모델 다운로드 및 검증
+    - 기본값으로 초기화 기능
+    """
 
     with st.expander("⚙️ 모델 설정", expanded=False):
 
@@ -244,7 +301,14 @@ def display_model_settings() -> None:
 
 
 def display_history() -> None:
-    """예측 히스토리를 테이블 형식으로 표시"""
+    """예측 히스토리를 테이블 형식으로 표시
+
+    저장된 모든 예측 기록을 최신순으로 표시합니다.
+    - 썸네일 이미지
+    - 예측된 숫자 및 신뢰도
+    - 예측 시각
+    - 선택적으로 확률 분포 차트 표시
+    """
     history_manager = st.session_state.history_manager
     records = history_manager.get_all_records(reverse=True)
 
@@ -307,7 +371,15 @@ def display_history() -> None:
 
 
 def main():
-    """메인 애플리케이션"""
+    """메인 애플리케이션
+
+    Streamlit 앱의 진입점입니다. 다음과 같은 순서로 실행됩니다:
+    1. 페이지 설정 및 초기화
+    2. 모델 및 시각화 매니저 로드
+    3. UI 렌더링 (캔버스, 설정, 결과 표시)
+    4. 예측 로직 처리 (버튼 클릭 시)
+    5. 히스토리 표시
+    """
 
     # 페이지 설정
     st.set_page_config(

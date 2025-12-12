@@ -1,28 +1,44 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API - 통합 파이프라인
 
-이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
+이 모듈은 MNIST 예측의 전체 과정을 통합 관리하는 MNISTPipeline 클래스를 제공합니다.
+
+주요 기능:
+    - 모델 다운로드 및 로딩 자동화
+    - 이미지 전처리 및 추론 일괄 처리
+    - 단일 인터페이스로 예측 수행
+
+파이프라인 구조:
+    MNISTPipeline
+    ├── ModelDownloader: 모델 다운로드
+    ├── ImagePreprocessor: 이미지 전처리
+    └── ONNXPredictor: 모델 추론
+
+사용 예:
+    pipeline = MNISTPipeline(config)
+    pipeline.initialize()
+    result = pipeline.predict(canvas_image)
 """
 
+import logging
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import logging
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from helper_dev_utils import get_auto_logger
-from src.model.DataClass import PredictionResult
-from src.model.DataClass import ModelConfig
+
+from src.model.DataClass import ModelConfig, PredictionResult
 from src.model.DummyDataGenerator import DummyDataGenerator
 from src.model.ImagePreprocessor import ImagePreprocessor
 from src.model.ModelDownloader import ModelDownloader

@@ -9,4 +9,4 @@ Modules:
     visualization: 예측 결과 시각화
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

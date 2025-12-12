@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 결과 시각화 API - 클래스 기반 설계
+"""MNIST 예측 결과 시각화 API - 이미지 시각화
 
-이 모듈은 MNIST 예측 결과를 시각화하는 다양한 방법을 제공합니다.
+이 모듈은 이미지 관련 시각화를 담당하는 ImageVisualizer 클래스를 제공합니다.
+
+주요 기능:
+    - 전처리 단계별 이미지 비교 표시
+    - 두 이미지 나란히 비교 시각화
+    - matplotlib을 사용한 이미지 렌더링
+
+사용 예:
+    viz = ImageVisualizer()
+    fig = viz.plot_preprocessing_steps(original, grayscale, resized, final)
+    fig = viz.plot_side_by_side(image1, image2, "Before", "After")
 """
 
-from typing import Optional, Tuple
 import logging
+import sys
+from pathlib import Path
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
+from helper_dev_utils import get_auto_logger
+from helper_plot_hangul import matplotlib_font_reset
 from matplotlib.figure import Figure
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-from helper_plot_hangul import matplotlib_font_reset
-from helper_dev_utils import get_auto_logger
-
 logger = get_auto_logger(log_level=logging.DEBUG)
 
 # ============================================================================

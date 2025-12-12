@@ -1,26 +1,34 @@
 # -*- coding: utf-8 -*-
-"""MNIST ONNX 모델링 API - 클래스 기반 설계
+"""MNIST ONNX 모델링 API - 데이터 클래스 정의
 
-이 모듈은 MNIST 숫자 예측을 위한 ONNX 모델 관리, 이미지 전처리, 추론 기능을 제공합니다.
+이 모듈은 MNIST 예측에 사용되는 주요 데이터 클래스들을 정의합니다.
+
+주요 클래스:
+    - PredictionResult: 모델 예측 결과를 담는 데이터 클래스
+    - ModelConfig: ONNX 모델 설정 정보를 담는 데이터 클래스
+
+사용 예:
+    config = ModelConfig()
+    result = PredictionResult(predicted_label=7, confidence=0.95, ...)
 """
 
-import os
 import logging
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
 import cv2
 import numpy as np
 import onnxruntime as ort
 import requests
+from helper_dev_utils import get_auto_logger
 from PIL import Image
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
-from helper_dev_utils import get_auto_logger
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 

@@ -1,22 +1,35 @@
 # -*- coding: utf-8 -*-
-"""MNIST 예측 결과 시각화 API - 클래스 기반 설계
+"""MNIST 예측 결과 시각화 API - 예측 결과 시각화
 
-이 모듈은 MNIST 예측 결과를 시각화하는 다양한 방법을 제공합니다.
+이 모듈은 MNIST 예측 확률을 시각화하는 PredictionVisualizer 클래스를 제공합니다.
+
+주요 기능:
+    - 확률 분포 막대 차트 (세로/가로)
+    - 컴팩트 막대 차트 (히스토리용)
+    - 파이 차트 시각화
+    - 신뢰도 게이지 표시
+
+차트 종류:
+    - plot_bar_chart: 전체 클래스 확률 막대 차트
+    - plot_compact_bar_chart: 작은 막대 차트 (히스토리 표시용)
+    - plot_horizontal_bar_chart: 상위 K개 가로 막대 차트
+    - plot_pie_chart: 파이 차트
+    - plot_confidence_gauge: 신뢰도 게이지
 """
 
-from typing import Optional, Tuple
 import logging
+import sys
+from pathlib import Path
+from typing import Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
+from helper_dev_utils import get_auto_logger
+from helper_plot_hangul import matplotlib_font_reset
 from matplotlib.figure import Figure
-from pathlib import Path
-import sys
 
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
-
-from helper_plot_hangul import matplotlib_font_reset
-from helper_dev_utils import get_auto_logger
 
 logger = get_auto_logger(log_level=logging.DEBUG)
 
@@ -349,11 +362,13 @@ class PredictionVisualizer:
     def _get_confidence_color(self, confidence: float) -> str:
         """신뢰도에 따른 색상을 반환합니다.
 
+        신뢰도에 따라 녹색(높음), 주황색(중간), 빨간색(낮음)을 반환합니다.
+
         Args:
             confidence: 신뢰도 (0.0 ~ 1.0)
 
         Returns:
-            색상 코드
+            색상 코드 (헥사 값)
         """
         if confidence >= 0.8:
             return "#4caf50"  # 녹색 (높음)
