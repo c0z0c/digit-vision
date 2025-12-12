@@ -17,6 +17,7 @@ logger = get_auto_logger()
 from src.model import MNISTPipeline, PredictionResult
 from src.history import HistoryManager, HistoryRecord, FileHistoryManager
 from src.visualization import VisualizationManager
+from src.utils.utils_st import hidden_page_top_margin, minimal_divider
 
 
 @st.cache_resource
@@ -69,7 +70,7 @@ def display_history() -> None:
         st.info("아직 예측 기록이 없습니다")
         return
 
-    st.markdown("### 예측 기록")
+    st.markdown("###### 예측 기록")
 
     show_charts = st.checkbox(
         "확률 분포 시각화 표시",
@@ -119,7 +120,8 @@ def display_history() -> None:
                     plt.close(fig)
 
         if idx < len(records) - 1:
-            st.divider()
+            minimal_divider()
+            # st.divider()
 
 
 def main():
@@ -133,6 +135,8 @@ def main():
         initial_sidebar_state="collapsed",
     )
 
+    hidden_page_top_margin()
+
     # matplotlib 한글 폰트 설정
     setup_matplotlib_font()
 
@@ -145,15 +149,16 @@ def main():
     history_manager = st.session_state.history_manager
 
     # 제목
-    st.subheader("🔢 AI 숫자 예측")
-    st.markdown("---")
+    st.markdown("##### 🔢 AI 숫자 예측")
+
+    minimal_divider()
 
     # 메인 레이아웃 (2열)
     col1, col2, col3 = st.columns([1, 1, 1])
 
     # 좌측: 캔버스 영역
     with col1:
-        st.markdown("### 입력 캔버스")
+        st.markdown("###### 입력 캔버스")
         # st.write("아래 캔버스에 0-9 사이의 숫자를 그려주세요")
 
         left, center, right = st.columns([1, 4, 2])
@@ -192,12 +197,12 @@ def main():
     # 우측: 전처리 이미지 및 추론 결과 영역
     with col2:
         # 전처리 이미지 영역
-        st.markdown("### 전처리 이미지")
+        st.markdown("###### 전처리 이미지")
         preprocessed_placeholder = st.empty()
 
     with col3:
         # 추론 결과 영역
-        st.markdown("### 추론 결과")
+        st.markdown("###### 추론 결과")
         result_placeholder = st.empty()
 
     # 예측 버튼 클릭 로직
@@ -289,8 +294,9 @@ def main():
             st.info("예측 결과가 여기 표시됩니다")
 
     # 하단: 이미지 저장소 (히스토리)
-    st.markdown("---")
-    st.markdown("#### 📚 이미지 저장소")
+    # st.markdown("---")
+    minimal_divider()
+    st.markdown("###### 📚 이미지 저장소")
 
     if len(history_manager) > 0:
         col_btn1, col_btn2 = st.columns([1, 5])
@@ -304,6 +310,8 @@ def main():
             st.write(
                 f"**총 {stats['total_count']}개 기록** | 평균 신뢰도: {stats['avg_confidence']:.2%}"
             )
+
+        minimal_divider()
 
     display_history()
 
