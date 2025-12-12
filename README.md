@@ -199,12 +199,8 @@ MIT License
 ## 시연영상
 
 <video width="600px" controls>
-  <source src="https://youtu.be/1b-1bM4VefI" type="video/mp4">
-  <img src="doc/preview01.png" width="600px" alt="대체 이미지">
+  <source src="doc/AI숫자예측_251212_102225.mp4" type="video/mp4">
+  <img src="doc/preview.png" width="600px" alt="대체 이미지">
 </video>
-
-<img src="doc/preview01.png" width="600px"/>
-
-<img src="doc/preview02.png" width="600px"/>
 
 [c0z0c-dev-digit-vision.streamlit.app](https://c0z0c-dev-digit-vision.streamlit.app)
