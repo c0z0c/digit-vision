@@ -201,12 +201,12 @@ def display_model_settings() -> None:
                         status_text = st.empty()
 
                         def update_progress(progress: float, status: str = ""):
-                            progress_bar.progress(progress)
+                            progress_bar.progress(min(progress, 1.0))
                             if status:
                                 status_text.text(status)
 
                         # 모델 다운로드
-                        downloader = ModelDownloader(new_config)
+                        downloader = ModelDownloader(config=new_config)
                         model_path = downloader.download(
                             force=True, progress_callback=update_progress
                         )
