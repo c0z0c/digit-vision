@@ -7,11 +7,11 @@ ONNX 형식의 MNIST 모델을 활용하여 사용자가 웹 캔버스에 그린
 본 프로젝트는 다음 기술을 활용하여 손글씨 숫자 인식 서비스를 제공합니다:
 
 <video width="320px" controls>
-  <source src="doc/AI숫자예측_251211_132033.mp4" type="video/mp4">
-  <img src="doc/preview01.png" width="320px" alt="대체 이미지">
+  <source src="doc/AI숫자예측_251212_140217.mp4" type="video/mp4">
+  <img src="doc/preview.png" width="320px" alt="대체 이미지">
 </video>
 
-<a href="https://youtu.be/1b-1bM4VefI" target="_blank" rel="noopener noreferrer">시연영상</a>
+<a href="https://youtu.be/TS62AbviDRg" target="_blank" rel="noopener noreferrer">시연영상</a>
 
 - **Streamlit**: 웹 인터페이스 및 대화형 UI
 - **ONNX Runtime**: 경량화된 추론 엔진
@@ -74,8 +74,8 @@ streamlit run app.py
 #### Docker Hub에서 실행
 
 ```bash
-docker pull c0z0c/digit-vision:v1.0
-docker run -p 8501:8501 c0z0c/digit-vision:v1.0
+docker pull c0z0c/digit-vision:v1.1
+docker run -p 8501:8501 c0z0c/digit-vision:v1.1
 ```
 
 #### 로컬에서 빌드
@@ -175,7 +175,7 @@ mission17/
 
 ### 배포
 - Docker
-- Docker Hub (c0z0c/digit-vision:v1.0)
+- Docker Hub (c0z0c/digit-vision:v1.1)
 
 ## 환경 요구사항
 
@@ -190,7 +190,7 @@ mission17/
 
 ## Docker Hub
 
-배포된 이미지: [c0z0c/digit-vision:v1.0](https://hub.docker.com/r/c0z0c/digit-vision)
+배포된 이미지: [c0z0c/digit-vision:v1.1](https://hub.docker.com/r/c0z0c/digit-vision)
 
 ## 라이선스
 
@@ -199,7 +199,7 @@ MIT License
 ## 시연영상
 
 <video width="600px" controls>
-  <source src="doc/AI숫자예측_251212_102225.mp4" type="video/mp4">
+  <source src="doc/AI숫자예측_251212_140217.mp4" type="video/mp4">
   <img src="doc/preview.png" width="600px" alt="대체 이미지">
 </video>
 
